@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Page</title>
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo"></div>
+        <div class="nav">
+            <a href="login.html" class="login-btn">Login</a>
+            <a href="#" id="search-icon">🔍</a>
+            <a href="#" id="menu-icon" onclick="toggleSidebar()">☰</a>
+        </div>
+    </div>
+
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
+        <a href="index.html">Home</a>
+        <a href="#">Menu</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+    </div>
+
+    <div class="order-container">
+        <!-- List Order Section -->
+        <div class="list-order">
+            <h2>Your Order</h2>
+            <div class="choose-table">
+                <h3>Chọn Bàn</h3>
+                <div class="table-grid">
+                    <button class="table-btn" data-table="1">Bàn 1</button>
+                    <button class="table-btn" data-table="2">Bàn 2</button>
+                    <button class="table-btn" data-table="3">Bàn 3</button>
+                    <button class="table-btn" data-table="4">Bàn 4</button>
+                    <button class="table-btn" data-table="5">Bàn 5</button>
+                    <button class="table-btn" data-table="6">Bàn 6</button>
+                    <button class="table-btn" data-table="7">Bàn 7</button>
+                    <button class="table-btn" data-table="8">Bàn 8</button>
+                    <button class="table-btn" data-table="9">Bàn 9</button>
+                </div>
+            </div>
+            
+            <ul id="order-list">
+                <!-- Các món ăn đã chọn sẽ được thêm vào đây -->
+            </ul>
+            <button class="send-order">Gửi Order</button>
+        </div>
+
+        <!-- Menu Section -->
+        <div class="menu-section">
+            <h2>Menu</h2>
+            <div class="search-bar">
+                <input type="text" placeholder="Tìm kiếm sản phẩm..." id="search">
+                <button>Tìm kiếm</button>
+            </div>
+            <div class="menu-tabs">
+                <button class="menu-tab active" data-category="all">Tất cả</button>
+                <button class="menu-tab" data-category="COMBO">Combo</button>
+                <button class="menu-tab" data-category="FOOD">Món ăn</button>
+                <button class="menu-tab" data-category="DRINK">Đồ uống</button>
+            </div>
+            <div class="menu-items">
+                <!-- Các món ăn sẽ được thêm vào đây -->
+                <div class="menu-item">
+                    <p>Tên món ăn</p>
+                    <button class="add-to-order">Chọn</button>
+                </div>
+                <!-- Thêm các món ăn tương tự vào đây -->
+            </div>
+        </div>
+    </div>
+
+    <button class="add-item-btn" onclick="toggleAddItem()">+</button>
+
+    <div class="add-item-container" id="add-item-container">
+        <h3>Thêm sản phẩm</h3>
+        <input type="text" id="item-name" placeholder="Tên sản phẩm" required>
+        <input type="number" id="item-price" placeholder="Giá" required>
+        <input type="text" id="item-description" placeholder="Mô tả" required>
+        <label for="category">Loại sản phẩm:</label>
+        <select id="category" required>
+            <option value="" disabled selected>Chọn loại sản phẩm</option>
+            <option value="COMBO">Combo</option>
+            <option value="FOOD">Món ăn</option>
+            <option value="DRINK">Đồ uống</option>
+        </select>
+        <button id="createBtn">Thêm</button>
+    </div>
+
+    <div id="order-button">
+        <button id="show-orders">🛒</button>
+    </div>
+    
+    <!-- Modal hiển thị đơn đặt hàng -->
+    <div id="order-modal" class="hidden">
+        <div class="modal-content">
+        <h2>Đơn đặt hàng</h2>
+        <ul id="order-list-modal">
+            <!-- Đơn đặt hàng sẽ được render ở đây -->
+        </ul>
+        <button id="close-modal">Đóng</button>
+        </div>
+    </div>
+  
+
+
+    <script src="orderscript.js"></script>
+</body>
+</html>

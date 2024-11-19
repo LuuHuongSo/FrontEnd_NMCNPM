@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNPM</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo"></div>
+        <div class="nav">
+            <a href="login.html" class="login-btn">Login</a>
+            <a href="#" id="search-icon">🔍</a>
+            <a href="#" id="menu-icon" onclick="toggleSidebar()">☰</a>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
+        <a href="#">Home</a>
+        <a href="#">Menu</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+    </div>
+
+    <!-- Hero Section -->
+     <div>
+        <section class="hero">
+            <h1>Group 5 Restaurant</h1>
+            <p>Nhập môn công nghệ phần mềm 2024.1</p>
+            <div class="search-box">
+                <input type="text" placeholder="Restaurant Name">
+                <input type="text" placeholder="All Locations">
+                <button>SEARCH</button>
+            </div>
+        </section>
+     </div>
+
+    <!-- Food Gallery -->
+    <!-- Food Gallery -->
+    <div>
+        <section class="food-gallery">
+            <div class="food-item">
+                <img src="https://images.pexels.com/photos/699953/pexels-photo-699953.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Food 1">
+            </div>
+            <div class="food-item">
+                <img src="https://images.pexels.com/photos/2097090/pexels-photo-2097090.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Food 2">
+            </div>
+            <div class="food-item">
+                <img src="https://images.pexels.com/photos/2983099/pexels-photo-2983099.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Food 3">
+            </div>
+            <div class="food-item">
+                <img src="https://images.pexels.com/photos/1860208/pexels-photo-1860208.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Food 4">
+            </div>
+        </section>
+     </div>
+
+
+
+    <!-- Best Popular Recipes Section -->
+     <div>
+        <section class="popular-recipes">
+            <h2>Our Best Popular Recipes</h2>
+            <div class="recipe-gallery">
+                <div class="recipe-item">
+                    <img src="https://images.pexels.com/photos/842571/pexels-photo-842571.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Breakfast">
+                    <h3>Breakfast</h3>
+                    <button class="recipe-btn">→</button>
+                </div>
+                <div class="recipe-item">
+                    <img src="https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Lunch">
+                    <h3>Lunch</h3>
+                    <button class="recipe-btn">→</button>
+                </div>
+                <div class="recipe-item">
+                    <img src="https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Dinner">
+                    <h3>Dinner</h3>
+                    <button class="recipe-btn">→</button>
+                </div>
+            </div>
+            <button class="order-now">
+                <a href="order.html">Order Now</a>
+            </button>
+        </section>
+     </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
