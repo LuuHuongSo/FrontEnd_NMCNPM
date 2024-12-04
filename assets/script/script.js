@@ -8,7 +8,7 @@ function toggleSidebar() {
   }
 }
 
-const BASE_URL = "http://localhost:3000/user";
+const BASE_URL = "http://localhost:3000/users";
 
 
 // Chuyển đổi giữa chế độ khách hàng và chủ cửa hàng
