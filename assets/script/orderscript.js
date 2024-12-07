@@ -10,7 +10,7 @@ function toggleSidebar() {
 // xu ly hàm main
 const orderList = [];
 var menuApi = 'http://localhost:8080/menu'
-var orderApi = 'http://localhost:3000/order'
+var orderApi = 'http://localhost:8080/order'
 
 function start() {
   getMenuItem('all', function(filteredItems) { 
@@ -341,7 +341,7 @@ function createMenuItem(menuItem,callback) {
     },
     body: JSON.stringify(menuItem)
   }
-  fetch(menuApi, option) 
+  fetch("http://localhost:8080/api/admin/menu", option) 
     .then(function(response) {
       response.json();
     })
@@ -385,8 +385,9 @@ function handleCreateForm() {
   }
   createButton.onclick = function() {
     var name = document.getElementById('item-name').value;
-    var price = document.getElementById('item-price').value;
+    var price = parseInt(document.getElementById('item-price').value, 10);
     var description = document.getElementById('item-description').value;
+    var image = document.getElementById('menu-image').value;
     var category = document.getElementById('category').value;
 
 
@@ -399,6 +400,7 @@ function handleCreateForm() {
       name: name,
       price : price,
       description: description,
+      image: image,
       category: category,
       isAvailable: true
     };
@@ -506,12 +508,6 @@ if(subItemContainer.style.display ==="block") {
   
 
 
-
-
-
-
-
-
 // Phân quyền
 function applyRoleBasedActions(role) {
 
@@ -532,3 +528,82 @@ function applyRoleBasedActions(role) {
       console.log("Không có vai trò nào được tìm thấy");
   }
 }
+
+// DOM elements
+const showOrdersBtn = document.getElementById('manager-show-orders');
+const orderModal = document.getElementById('manager-order-modal');
+const closeModalBtn = document.getElementById('manager-close-modal');
+const orderListModal = document.getElementById('manager-order-list-modal');
+
+// Fetch orders from JSON Server
+async function fetchOrders() {
+    try {
+        const response = await fetch('http://localhost:3000/order'); // URL của JSON Server
+        const orders = await response.json();
+        renderOrders(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+    }
+}
+
+// Render orders in modal
+function renderOrders(orders) {
+    orderListModal.innerHTML = ''; // Clear existing orders
+
+    orders.forEach(order => {
+        const orderItem = document.createElement('li');
+        orderItem.classList.add('order-item');
+
+        orderItem.innerHTML = `
+            <p><strong>Bàn:</strong> ${order.table}</p>
+            <p><strong>Khách hàng:</strong> ${order.custommer}</p>
+            <p><strong>Thời gian đặt:</strong> ${new Date(order.orderTime).toLocaleString()}</p>
+            <p><strong>Trạng thái:</strong> ${order.orderStatus}</p>
+            <p><strong>Tổng tiền:</strong> ${order.totalAmount}₫</p>
+            <p><strong>Chi tiết món:</strong></p>
+            <ul>
+                ${order.orderItems.map(item => `
+                    <li>${item.menuItem.name} - ${item.quantity} x ${item.price}₫</li>
+                `).join('')}
+            </ul>
+            ${order.orderStatus === 'PENDING' ? `<button data-id="${order.id}" class="delete-order">Xóa</button>` : ''}
+        `;
+
+        orderListModal.appendChild(orderItem);
+    });
+
+    // Attach event listeners for delete buttons
+    document.querySelectorAll('.delete-order').forEach(button => {
+        button.addEventListener('click', deleteOrder);
+    });
+}
+
+// Delete order from JSON Server
+async function deleteOrder(event) {
+    const orderId = event.target.getAttribute('data-id');
+
+    try {
+        const response = await fetch(`http://localhost:3000/order/${orderId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            alert('Đã xóa đơn hàng!');
+            fetchOrders(); // Refresh orders
+        } else {
+            alert('Lỗi khi xóa đơn hàng.');
+        }
+    } catch (error) {
+        console.error('Error deleting order:', error);
+    }
+}
+
+// Event listeners
+showOrdersBtn.addEventListener('click', () => {
+    orderModal.classList.remove('hidden');
+    fetchOrders(); // Fetch and render orders
+});
+
+closeModalBtn.addEventListener('click', () => {
+    orderModal.classList.add('hidden');
+});

@@ -8,8 +8,6 @@ function toggleSidebar() {
   }
 }
 
-const BASE_URL = "http://localhost:3000/users";
-
 
 // Chuyển đổi giữa chế độ khách hàng và chủ cửa hàng
 document.getElementById("customerBtn").onclick = function () {
@@ -35,29 +33,32 @@ document.getElementById("ownerLoginForm")?.addEventListener("submit", async (e) 
   const password = document.getElementById("password").value;
 
   try {
-    //lấy thông tin người dùng từ jsonsever users
-    const response = await fetch(`http://localhost:3000/users?email=${email}&password=${password}`);
-    const users = await response.json();
+    const response = await fetch("http://localhost:8080/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (users.length > 0) {
-      // Lấy thông tin phản hồi mô phỏng từ /responses
-      const responseMock = await fetch("http://localhost:3000/responses");
-      const { login } = await responseMock.json();
+    const result = await response.json();
 
-      // Lưu token và vai trò vào Local Storage
-      localStorage.setItem("token", login.jwt);
-      localStorage.setItem("role", users[0].role); // Dùng role từ users
+    if (response.ok && result.message === "Login Successfully!") {
+      localStorage.setItem("token", result.jwt);
+      localStorage.setItem("email", result.email);
+      localStorage.setItem("role", "MANAGER");
 
       alert("Login successful!");
       window.location.href = "index.html";
     } else {
-      alert("Invalid email or password.");
+      alert(result.message || "Login failed!");
     }
   } catch (error) {
     console.error("Error:", error);
-    alert("An error occurred while logging in.");
+    alert("Unable to connect to the server. Please try again later.");
   }
 });
+
 
 // Kiểm tra trạng thái đăng nhập
 document.addEventListener("DOMContentLoaded", () => {

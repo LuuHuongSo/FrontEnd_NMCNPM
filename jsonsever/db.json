@@ -27,77 +27,12 @@
   ],
   "foods": [
     {
-      "id": "1",
-      "name": "Nem nướng",
-      "price": 30000,
-      "description": "Food",
-      "category": "FOOD"
-    },
-    {
-      "id": "2",
-      "name": "Bún đậu ",
-      "price": "35000",
-      "description": "Food",
-      "category": "FOOD"
-    },
-    {
-      "id": "3",
-      "name": "Bún chả",
-      "price": "30000",
-      "description": "Food",
-      "category": "FOOD"
-    },
-    {
-      "id": "4",
-      "name": "Trà chanh",
-      "price": "15000",
-      "description": "Drink",
-      "category": "DRINK"
-    },
-    {
-      "id": "5",
-      "name": "Trà Thái",
-      "price": "18000",
-      "description": "Drink",
-      "category": "DRINK"
-    },
-    {
-      "id": "6",
-      "name": "Bánh mì",
-      "price": "15000",
-      "description": "Food",
-      "category": "DRINK"
-    },
-    {
-      "id": "870c",
-      "name": "Combo Bánh mì sữa đậu nành",
-      "price": "30000",
-      "description": "giảm 20%",
-      "category": "COMBO",
-      "isAvailable": true
-    },
-    {
-      "id": "44cc",
-      "name": "Đùi gà rán + trà chanh ",
-      "price": "50000",
+      "id": 1,
+      "name": "kẹo",
+      "price": 49000,
       "description": "",
-      "category": "COMBO",
-      "isAvailable": true
-    },
-    {
-      "id": "f5ad",
-      "name": "Đùi gà rán + trà chanh ",
-      "price": "50000",
-      "description": "",
-      "category": "COMBO",
-      "isAvailable": true
-    },
-    {
-      "id": "1d3e",
-      "name": "Đùi gà rán + trà chanh ",
-      "price": "50000",
-      "description": "",
-      "category": "COMBO",
+      "image": "",
+      "category": "FOOD",
       "isAvailable": true
     }
   ],
