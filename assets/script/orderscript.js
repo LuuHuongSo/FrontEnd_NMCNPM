@@ -9,13 +9,15 @@ function toggleSidebar() {
 
 // xu ly hàm main
 const orderList = [];
-var menuApi = 'http://localhost:8080/menu'
-var orderApi = 'http://localhost:8080/order'
+var menuApi = 'http://localhost:8080/menu';
+var orderApi = 'http://localhost:3000/order';
+const tableApi = 'http://localhost:3000/tables';
 
 function start() {
+  getTables(renderTables);
   getMenuItem('all', function(filteredItems) { 
-      renderMenu(filteredItems);
-      setupTabs(); 
+    renderMenu(filteredItems);
+    setupTabs(); 
   });
 
   handleCreateForm();
@@ -184,148 +186,244 @@ function removeOrderItem(id, element) {
   element.remove();
 }
 
+// xu ly render ban
+function getTables(callback) {
+  fetch(tableApi) 
+    .then((response) => {
+      return response.json();
+    })
+    .then(callback)
+    .catch((error) => {
+      console.error('Error fetching tables:', error);
+    });
+}
 
-// hien thi thong tin 
-document.addEventListener('DOMContentLoaded', function () {
+function renderTables(tables) {
+  if(localStorage.getItem("role") === "CUSTOMER") {
+    var tablesBlock = document.querySelector('.customer-table-grid');
+
+    var htmls = tables.map((table) => {
+    return `<button class ='customer-table-btn' data-table='${table.number}'> Bàn ${table.number}</button>`
+    });
+
+    tablesBlock.innerHTML = htmls.join('');
+    fetchOccupiedTables(tables);
+  } else if(localStorage.getItem("role") === "MANAGER") {
+    var tablesBlock = document.querySelector('.manager-table-grid');
+
+    var htmls = tables.map((table) => {
+      return `<button class ='manager-table-btn' data-table='${table.number}'> Bàn ${table.number}</button>`
+    });
+    tablesBlock.innerHTML = htmls.join('');
+    fetchTableAndOrderData();
+  }
+}
+
+function fetchOccupiedTables(tables) {
+  const occupiedTables = tables.filter((table) => table.status === 'OCCUPIED');
+  const occupiedTableNumbers = occupiedTables.map((table) => table.number);
+
   const customerTableButtons = document.querySelectorAll('.customer-table-btn');
 
-  function fetchOccupiedTables() {
-    fetch(orderApi)
-      .then((response) => response.json())
-      .then((orders) => {
-        const occupiedTables = orders.map((order) => order.table);
+  customerTableButtons.forEach((button) => {
+    const tableNumber = Number(button.dataset.table);
+    if(occupiedTableNumbers.includes(tableNumber)) {
+      button.classList.add('occupied');
+    } else {
+      button.classList.remove('occupied');
+    }
 
-        // lấy thông tin trong mảng số bàn check trùng để hiển thị
-        customerTableButtons.forEach((button) => {
-          const tableNumber = parseInt(button.dataset.table);
-          if (occupiedTables.includes(tableNumber)) {
-            button.classList.add('occupied');
-          } else {
-            button.classList.remove('occupied');
-          }
-
-          // đánh dấu bàn đã đặt
-          button.addEventListener('click', function () {
-              if (!button.classList.contains('occupied')) {
-                document.querySelectorAll('.customer-table-btn.selected').forEach((btn) => {
-                  btn.classList.remove('selected');
-                });
-
-                button.classList.add('selected');
-                const selectedTable = button.dataset.table;
-                console.log(`Table ${selectedTable} selected.`);
-              }
-            });
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching table data:", error);
+    button.addEventListener('click', function() {
+      if(!button.classList.contains('occupied')) {
+        document.querySelectorAll('.customer-table-btn.selected').forEach((btn) => {
+          btn.classList.remove('selected');
         });
-  }
 
-  fetchOccupiedTables();
-});
+        button.classList.add('selected');
+        const selectedTable = button.dataset.table;
+        console.log( `Table ${selectedTable} selected.`);
+      }
+    });
+  });
+}
 
-// gui
-let orders = [];
-
+let myOrderId = 0;
 // Gửi order
-document.querySelector('.send-order').addEventListener('click', function () {
-  const table = parseInt(document.querySelector('.customer-table-btn.selected')?.dataset.table); // Số bàn
-  if (!table) {
+document.querySelector('.send-order').addEventListener('click', async function () {
+  const selectedButton = document.querySelector('.customer-table-btn.selected');
+  const tableNumber = selectedButton ? Number(selectedButton.dataset.table) : null;
+
+  if (!tableNumber) {
     alert('Vui lòng chọn bàn trước khi gửi order!');
     return;
   }
 
-  const orderItems = [];
-  let totalAmount = 0;
+  try {
+    // Lấy thông tin bàn từ API
+    const response = await fetch(tableApi);
+    const tables = await response.json();
 
-  document.querySelectorAll('#order-list .order-item').forEach(item => {
-    const id = item.dataset.id;
-    const name = item.textContent.split(' - ')[0].trim(); 
-    const price = parseInt(item.textContent.split(' - ')[1]); 
-    const quantity = parseInt(item.querySelector('#quantity').value);
-
-    if (!quantity || quantity <= 0) {
-      alert(`Vui lòng nhập số lượng hợp lệ cho món: ${name}`);
+    const selectedTable = tables.find((table) => table.number === tableNumber);
+    if (!selectedTable) {
+      alert('Bàn đã chọn không hợp lệ!');
       return;
     }
 
-    totalAmount += price * quantity; 
+    // Tạo danh sách order items
+    const orderItems = [];
+    let totalAmount = 0;
 
-    orderItems.push({
-      id,
-      menuItem: {
+    document.querySelectorAll('#order-list .order-item').forEach(item => {
+      const id = item.dataset.id;
+      const name = item.textContent.split(' - ')[0].trim();
+      const price = parseInt(item.textContent.split(' - ')[1]);
+      const quantity = parseInt(item.querySelector('#quantity').value);
+
+      if (!quantity || quantity <= 0) {
+        alert(`Vui lòng nhập số lượng hợp lệ cho món: ${name}`);
+        throw new Error('Invalid quantity');
+      }
+
+      totalAmount += price * quantity;
+
+      orderItems.push({
         id,
-        name,
-        description: "", 
-        price,
-        category: item.category,
-        isAvailable: true
-      },
-      quantity,
-      price: price * quantity,
-      specialInstruction: "" 
-    });
-  });
-
-  if (orderItems.length === 0) {
-    alert('Đơn hàng của bạn đang trống!');
-    return;
-  }
-
-  // Chuẩn bị dữ liệu gửi đi
-  const orderData = {
-    id: String(table), // ID đơn hàng, trùng với table
-    table: table, // Số bàn
-    customer: table, // Trùng với số bàn
-    orderItems,
-    orderStatus: "PENDING", // Trạng thái mặc định
-    orderTime: new Date().toISOString(), // Thời gian hiện tại
-    totalAmount // Tổng số tiền
-  };
-
-  // Gửi dữ liệu đến server
-  fetch(orderApi, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(orderData)
-  })
-    .then(response => {
-      return response.json();
-    })
-    .then(data => {
-      alert('Đơn hàng đã gửi thành công!');
-      console.log(data);
-
-      // Thêm vào danh sách hiển thị
-      addOrder({
-        table: table,
-        items: orderItems.map(item => item.menuItem.name),
-        total: totalAmount,
-        status: "PENDING" // Trạng thái mặc định
+        menuItem: {
+          id,
+          name,
+          description: "",
+          price,
+          category: item.category,
+          isAvailable: true
+        },
+        quantity,
+        price: price * quantity,
+        specialInstruction: ""
       });
-
-      // renderOrders();
-
-      // Xoá danh sách sau khi gửi
-      document.querySelector('#order-list').innerHTML = '';
-      orderList.length = 0; // Xóa dữ liệu trong orderList
-    })
-    .catch(error => {
-      console.error(error);
-      alert('Có lỗi xảy ra khi gửi đơn hàng.');
     });
+
+    if (orderItems.length === 0) {
+      alert('Đơn hàng của bạn đang trống!');
+      return;
+    }
+
+    // Chuẩn bị dữ liệu gửi đi
+    myOrderId = Date.now().toString();
+
+    const orderData = {
+      id: myOrderId,
+      table: selectedTable,
+      customer: tableNumber,
+      orderItems,
+      orderStatus: "PENDING",
+      orderTime: new Date().toISOString(),
+      totalAmount
+    };
+
+    // Gửi đơn hàng
+    const orderResponse = await fetch(orderApi, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderData)
+    });
+
+    if (!orderResponse.ok) {
+      throw new Error('Failed to send order');
+    }
+
+    const orderResult = await orderResponse.json();
+    alert('Đơn hàng đã gửi thành công!');
+    console.log('Order response:', orderResult);
+
+    // Gửi yêu cầu cập nhật trạng thái bàn
+    selectedTable.status = "OCCUPIED"; // Cập nhật trạng thái bàn
+    const tableUpdateResponse = await fetch(`${tableApi}/${selectedTable.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(selectedTable)
+    });
+
+    if (!tableUpdateResponse.ok) {
+      throw new Error('Failed to update table status');
+    }
+
+    const updatedTable = await tableUpdateResponse.json();
+    console.log('Updated table status:', updatedTable);
+
+    // // hiển thị đơn mới đặt
+    // const order = await (await fetch(`${orderApi}/${newOrderId}`)).json();
+
+    // renderOrder(order);
+    // alert('Đơn hàng đã gửi thành công!');
+
+
+    // Xóa danh sách sau khi gửi
+    document.querySelector('#order-list').innerHTML = '';
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra khi gửi đơn hàng hoặc cập nhật trạng thái bàn.');
+  }
 });
 
+async function getMyOrder() {
+  try {
+    // Fetch đơn hàng từ server (sử dụng await để đợi kết quả)
+    const response = await fetch(`${orderApi}/${myOrderId}`);
+    
+    // Kiểm tra phản hồi
+    if (!response.ok) {
+      throw new Error('Không thể lấy thông tin đơn hàng');
+    }
 
-// Thêm order vào danh sách
-function addOrder(order) {
-  orders.push(order);
+    // Parse JSON dữ liệu trả về từ server
+    const order = await response.json();
+
+    // Render đơn hàng
+    renderOrder(order);
+  } catch (error) {
+    console.error(error);
+    alert('Đã có lỗi xảy ra khi lấy đơn hàng');
+  }
 }
 
+function renderOrder(order) {
+  const ordersContainer = document.querySelector('#customer-order-list-modal'); // Element chứa danh sách đơn hàng
+  const orderHTML = `
+    <div class="order">
+      <p><strong>Bàn:</strong> ${order.table.number}</p>
+      <p><strong>Trạng thái:</strong> ${order.orderStatus}</p>
+      <p><strong>Thời gian:</strong> ${new Date(order.orderTime).toLocaleString()}</p>
+      <ul>
+        ${order.orderItems.map(item => `
+          <li>${item.menuItem.name} - ${item.quantity} x ${item.menuItem.price} = ${item.price}</li>
+        `).join('')}
+      </ul>
+      <p><strong>Tổng tiền:</strong> ${order.totalAmount}</p>
+    </div>
+  `;
+  ordersContainer.innerHTML = orderHTML + ordersContainer.innerHTML; // Thêm đơn mới lên đầu
+}
+
+// DOM elements
+const showOrdersBtncm = document.getElementById('customer-show-orders');
+const orderModalcm = document.getElementById('customer-order-modal');
+const closeModalBtncm = document.getElementById('customer-close-modal');
+const orderListModalcm = document.getElementById('customer-order-list-modal');
+
+
+// Event listeners
+showOrdersBtncm.addEventListener('click', () => {
+  orderModalcm.classList.remove('hidden');
+  fetchOrders(); // Fetch and render orders
+});
+
+closeModalBtncm.addEventListener('click', () => {
+  orderModalcm.classList.add('hidden');
+});
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -341,7 +439,7 @@ function createMenuItem(menuItem,callback) {
     },
     body: JSON.stringify(menuItem)
   }
-  fetch("http://localhost:8080/api/admin/menu", option) 
+  fetch("http://localhost:8080/menu", option) 
     .then(function(response) {
       response.json();
     })
@@ -353,9 +451,12 @@ function createMenuItem(menuItem,callback) {
 
 function deleteMenuItem(id, callback) {
   var option = {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8'
+     }
   }
-  fetch(id, option) 
+  fetch(`${menuApi}/${id}`, option) 
     .then(function(response) {
       response.json();
     })
@@ -411,82 +512,162 @@ function handleCreateForm() {
   }
 }
 
-
-
-// hien thi thong tin 
-document.addEventListener('DOMContentLoaded', function () {
-  const customerTableButtons = document.querySelectorAll('.manager-table-btn');
+// xử lý với table
+function fetchTableAndOrderData() {
+  const managerTablebuttons = document.querySelectorAll('.manager-table-btn');
   const orderDetailsContainer = document.getElementById('order-details'); // Khu vực hiển thị chi tiết đơn hàng
 
-  function fetchOccupiedTables() {
-      fetch(orderApi)
-          .then((response) => response.json())
-          .then((orders) => {
-              const occupiedTables = orders.map((order) => order.table);
+  Promise.all([
+    fetch(tableApi).then((res) => res.json()),
+    fetch(orderApi).then((res) => res.json()),
+  ])
+    .then(([tables, orders]) => {
+      managerTablebuttons.forEach((button) => {
+        const tableNumber = parseInt(button.dataset.table);
+        const table = tables.find((tbl) => tbl.number === tableNumber);
 
-              // Duyệt qua từng nút bàn
-              customerTableButtons.forEach((button) => {
-                  const tableNumber = parseInt(button.dataset.table);
+        if (table) {
+          if (table.status === 'OCCUPIED') {
+            button.classList.add('occupied');
+            button.disabled = false; // Bàn có thể nhấn
+            button.style.backgroundColor = 'green'; // Màu xanh cho bàn có đơn hàng
+          } else {
+            button.classList.remove('occupied');
+            button.disabled = true; // Bàn không nhấn được
+            button.style.backgroundColor = ''; // Trả lại màu mặc định
+          }
+        }
 
-                  // Nếu bàn có đơn hàng, thêm class "occupied"
-                  if (occupiedTables.includes(tableNumber)) {
-                      button.classList.add('occupied');
-                      button.disabled = false; // Bàn có thể nhấn
-                      button.style.backgroundColor = 'green'; // Màu xanh cho bàn có đơn hàng
-                  } else {
-                      button.classList.remove('occupied');
-                      button.disabled = true; // Bàn không có đơn hàng thì không nhấn được
-                      button.style.backgroundColor = ''; // Trả lại màu mặc định
-                  }
-
-                  // Gắn sự kiện nhấn để hiển thị chi tiết đơn hàng
-                  button.addEventListener('click', function () {
-                      // Bỏ class "selected" khỏi các bàn khác
-                      document.querySelectorAll('.manager-table-btn.selected').forEach((btn) => {
-                          btn.classList.remove('selected');
-                      });
-
-                      // Đánh dấu bàn được chọn
-                      button.classList.add('selected');
-                      const selectedTable = tableNumber;
-                      console.log(`Table ${selectedTable} selected.`);
-
-                      // Lấy chi tiết đơn hàng của bàn được chọn
-                      const selectedOrder = orders.find((order) => order.table === selectedTable);
-                      if (selectedOrder) {
-                          displayOrderDetails(selectedOrder);
-                      } else {
-                          orderDetailsContainer.innerHTML = `<p>Không có đơn hàng nào cho bàn ${selectedTable}.</p>`;
-                      }
-                  });
-              });
-          })
-          .catch((error) => {
-              console.error('Error fetching table data:', error);
+        button.addEventListener('click', function () {
+          document.querySelectorAll('.manager-table-btn.selected').forEach((btn) => {
+            btn.classList.remove('selected');
           });
-  }
 
-  function displayOrderDetails(order) {
-      // Hiển thị thông tin chi tiết của đơn hàng
-      const orderHTML = `
-          <h3>Đơn hàng của bàn ${order.table}</h3>
-          <p><strong>Trạng thái:</strong> ${order.orderStatus}</p>
-          <p><strong>Tổng tiền:</strong> ${order.totalAmount} VND</p>
-          <p><strong>Thời gian đặt hàng:</strong> ${new Date(order.orderTime).toLocaleString()}</p>
-          <ul>
-              ${order.orderItems.map(item => `
-                  <li>
-                      <strong>${item.menuItem.name}</strong> - 
-                      ${item.quantity} x ${item.menuItem.price} VND = ${item.price} VND
-                  </li>
-              `).join('')}
-          </ul>
-      `;
-      orderDetailsContainer.innerHTML = orderHTML;
-  }
+          button.classList.add('selected');
+          const selectedTable = tableNumber;
 
-  fetchOccupiedTables();
-});
+          const selectedOrder = orders.find((order) => order.table.number === selectedTable);
+          if (selectedOrder) {
+            displayOrderDetails(selectedOrder, tables);
+          } else {
+            orderDetailsContainer.innerHTML = `<p>Không có đơn hàng nào cho bàn ${selectedTable}.</p>`;
+          }
+        });
+      });
+    })
+    .catch((error) => {
+      console.error('Error fetching table or order data:', error);
+    });
+}
+
+function displayOrderDetails(order, tables) {
+  const orderDetailsContainer = document.getElementById('order-details');
+  const orderHTML = `
+    <h3>Đơn hàng của bàn ${order.table.number}</h3>
+    <p><strong>Trạng thái:</strong> ${order.orderStatus}</p>
+    <p><strong>Tổng tiền:</strong> ${order.totalAmount} VND</p>
+    <p><strong>Thời gian đặt hàng:</strong> ${new Date(order.orderTime).toLocaleString()}</p>
+    <ul>
+      ${order.orderItems.map(item => `
+        <li>
+          <strong>${item.menuItem.name}</strong> - 
+          ${item.quantity} x ${item.menuItem.price} VND = ${item.price} VND
+        </li>
+      `).join('')}
+    </ul>
+    <div>
+      <button id="confirm-order-btn">Confirm</button>
+      <button id="delete-order-btn" ${order.orderStatus !== 'PAID' ? 'disabled' : ''}>Delete</button>
+    </div>
+  `;
+  orderDetailsContainer.innerHTML = orderHTML;
+
+  // Thêm sự kiện cho nút Confirm
+  const confirmButton = document.getElementById('confirm-order-btn');
+  confirmButton.addEventListener('click', function () {
+    updateOrderStatus(order.id, 'CONFIRM')
+      .then(() => {
+        order.orderStatus = 'CONFIRM';
+        alert(`Order for table ${order.table.number} has been confirmed.`);
+        displayOrderDetails(order, tables);
+      })
+      .catch((error) => {
+        console.error('Error confirming order:', error.message);
+        alert('Failed to confirm the order.');
+      });
+  });
+  // thêm sự kiện nút delete
+  const deleteButton = document.getElementById('delete-order-btn');
+  deleteButton.addEventListener('click', function () {
+    console.log(typeof order.id);
+    if (order.orderStatus === 'PAID') {
+      deleteOrder(order.id)
+        .then(() => {
+          
+          alert(`Order for table ${order.table.number} has been deleted.`);
+          updateTableStatus(order.table.id, 'AVAILABLE', tables)
+            .then(() => {
+              console.log(`Table ${order.table.number} is now AVAILABLE.`);
+              fetchTableAndOrderData();
+            })
+            .catch((error) => {
+              console.error('Error updating table status:', error);
+            });
+        })
+        .catch((error) => {
+          console.error('Error deleting order:',error);
+          alert('Failed to delete the order.');
+        });
+    }
+  });
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  return fetch(`${orderApi}/${orderId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ orderStatus: newStatus }),
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Failed to update order status.');
+    }
+    return response.json();
+  });
+}
+
+function deleteOrder(orderId) {
+  return fetch(`${orderApi}/${orderId}`, {
+    method: 'DELETE',
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Failed to delete order.');
+    }
+    console.log(response.json());
+    return response.json();
+  })
+}
+
+function updateTableStatus(tableNumber, newStatus, tables) {
+  const table = tables.find((tbl) => tbl.number === tableNumber);
+  if (table) {
+    return fetch(`${tableApi}/${table.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus }),
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error('Failed to update table status.');
+      }
+      return response.json();
+    });
+  } else {
+    return Promise.reject('Table not found.');
+  }
+}
 
 function toggleAddItem() {
 const addItemContainer = document.getElementById("add-item-container");

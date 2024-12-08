@@ -27,7 +27,7 @@
   ],
   "foods": [
     {
-      "id": 1,
+      "id": "1",
       "name": "kẹo",
       "price": 49000,
       "description": "",
@@ -36,142 +36,68 @@
       "isAvailable": true
     }
   ],
-  "order": [
+  "tables": [
     {
-      "id": "8",
-      "table": 8,
-      "custommer": 8,
-      "orderItems": [
-        {
-          "id": "1",
-          "menuItem": {
-            "id": "1",
-            "name": "Nem nướng",
-            "description": "",
-            "price": 30000,
-            "category": "FOOD",
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 30000,
-          "specialInstruction": ""
-        },
-        {
-          "id": "3",
-          "menuItem": {
-            "id": "3",
-            "name": "Bún chả",
-            "description": "",
-            "price": 30000,
-            "category": "FOOD",
-            "isAvailable": true
-          },
-          "quantity": 2,
-          "price": 60000,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-11-26T02:03:35.789Z",
-      "totalAmount": 90000
+      "id": "1",
+      "number": 1,
+      "status": "AVAILABLE"
     },
     {
-      "id": "9",
-      "table": 9,
-      "custommer": 9,
-      "orderItems": [
-        {
-          "id": "1",
-          "menuItem": {
-            "id": "1",
-            "name": "Nem nướng",
-            "description": "",
-            "price": 30000,
-            "category": "FOOD",
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 30000,
-          "specialInstruction": ""
-        },
-        {
-          "id": "21a2",
-          "menuItem": {
-            "id": "21a2",
-            "name": "fhrdfk",
-            "description": "",
-            "price": 3443,
-            "category": "FOOD",
-            "isAvailable": true
-          },
-          "quantity": 2,
-          "price": 6886,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-11-26T02:15:02.863Z",
-      "totalAmount": 36886
+      "id": "2",
+      "number": 2,
+      "status": "AVAILABLE"
     },
     {
       "id": "3",
-      "table": 3,
-      "custommer": 3,
-      "orderItems": [
-        {
-          "id": "1",
-          "menuItem": {
-            "id": "1",
-            "name": "Nem nướng",
-            "description": "",
-            "price": 30000,
-            "isAvailable": true
-          },
-          "quantity": 2,
-          "price": 60000,
-          "specialInstruction": ""
-        },
-        {
-          "id": "3",
-          "menuItem": {
-            "id": "3",
-            "name": "Bún chả",
-            "description": "",
-            "price": 30000,
-            "isAvailable": true
-          },
-          "quantity": 2,
-          "price": 60000,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-11-26T03:11:45.284Z",
-      "totalAmount": 120000
+      "number": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "4",
+      "number": 4,
+      "status": "OCCUPIED"
     },
     {
       "id": "5",
-      "table": 5,
-      "custommer": 5,
+      "number": 5,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "6",
+      "number": 6,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "7",
+      "number": 7,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "8",
+      "number": 8,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "9",
+      "number": 9,
+      "status": "AVAILABLE"
+    }
+  ],
+  "order": [
+    {
+      "id": "1733672085737",
+      "table": {
+        "id": "4",
+        "number": 4,
+        "status": "AVAILABLE"
+      },
+      "customer": 4,
       "orderItems": [
         {
-          "id": "1",
+          "id": "102",
           "menuItem": {
-            "id": "1",
-            "name": "Nem nướng",
-            "description": "",
-            "price": 30000,
-            "isAvailable": true
-          },
-          "quantity": 2,
-          "price": 60000,
-          "specialInstruction": ""
-        },
-        {
-          "id": "2",
-          "menuItem": {
-            "id": "2",
-            "name": "Bún đậu",
+            "id": "102",
+            "name": "Gà rán",
             "description": "",
             "price": 35000,
             "isAvailable": true
@@ -179,124 +105,11 @@
           "quantity": 1,
           "price": 35000,
           "specialInstruction": ""
-        },
-        {
-          "id": "44cc",
-          "menuItem": {
-            "id": "44cc",
-            "name": "Đùi gà rán + trà chanh",
-            "description": "",
-            "price": 50000,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 50000,
-          "specialInstruction": ""
         }
       ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-11-26T09:57:37.213Z",
-      "totalAmount": 145000
-    },
-    {
-      "id": "fcd1",
-      "tableId": 2,
-      "customerId": 2
-    },
-    {
-      "id": "2",
-      "table": 2,
-      "customer": 2,
-      "orderItems": [
-        {
-          "id": "1",
-          "menuItem": {
-            "id": "1",
-            "name": "Nem nướng",
-            "description": "",
-            "price": 30000,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 30000,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-12-03T03:49:44.057Z",
-      "totalAmount": 30000
-    },
-    {
-      "id": "4",
-      "table": 4,
-      "customer": 4,
-      "orderItems": [
-        {
-          "id": "5",
-          "menuItem": {
-            "id": "5",
-            "name": "Trà Thái",
-            "description": "",
-            "price": 18000,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 18000,
-          "specialInstruction": ""
-        },
-        {
-          "id": "6",
-          "menuItem": {
-            "id": "6",
-            "name": "Bánh mì",
-            "description": "",
-            "price": 15000,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 15000,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-12-03T03:53:54.608Z",
-      "totalAmount": 33000
-    },
-    {
-      "id": "1",
-      "table": 1,
-      "customer": 1,
-      "orderItems": [
-        {
-          "id": "1",
-          "menuItem": {
-            "id": "1",
-            "name": "heloo",
-            "description": "",
-            "price": 199,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 199,
-          "specialInstruction": ""
-        },
-        {
-          "id": "52",
-          "menuItem": {
-            "id": "52",
-            "name": "hello",
-            "description": "",
-            "price": 199,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 199,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PENDING",
-      "orderTime": "2024-12-04T06:30:34.120Z",
-      "totalAmount": 398
+      "orderStatus": "PAID",
+      "orderTime": "2024-12-08T15:34:45.737Z",
+      "totalAmount": 35000
     }
   ]
 }
