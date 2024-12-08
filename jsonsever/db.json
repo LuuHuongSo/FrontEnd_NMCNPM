@@ -55,7 +55,7 @@
     {
       "id": "4",
       "number": 4,
-      "status": "OCCUPIED"
+      "status": "AVAILABLE"
     },
     {
       "id": "5",
@@ -83,33 +83,5 @@
       "status": "AVAILABLE"
     }
   ],
-  "order": [
-    {
-      "id": "1733672085737",
-      "table": {
-        "id": "4",
-        "number": 4,
-        "status": "AVAILABLE"
-      },
-      "customer": 4,
-      "orderItems": [
-        {
-          "id": "102",
-          "menuItem": {
-            "id": "102",
-            "name": "Gà rán",
-            "description": "",
-            "price": 35000,
-            "isAvailable": true
-          },
-          "quantity": 1,
-          "price": 35000,
-          "specialInstruction": ""
-        }
-      ],
-      "orderStatus": "PAID",
-      "orderTime": "2024-12-08T15:34:45.737Z",
-      "totalAmount": 35000
-    }
-  ]
+  "order": []
 }

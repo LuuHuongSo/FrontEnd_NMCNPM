@@ -10,8 +10,8 @@ function toggleSidebar() {
 // xu ly hàm main
 const orderList = [];
 var menuApi = 'http://localhost:8080/menu';
-var orderApi = 'http://localhost:3000/order';
-const tableApi = 'http://localhost:3000/tables';
+var orderApi = 'http://localhost:8080/order';
+const tableApi = 'http://localhost:8080/tables';
 
 function start() {
   getTables(renderTables);
@@ -21,6 +21,7 @@ function start() {
   });
 
   handleCreateForm();
+  handleDeleteForm();
   applyRoleBasedActions(localStorage.getItem("role"));
 }
 
@@ -45,29 +46,30 @@ function getMenuItem(filterCategory, callback) {
 }
 function renderMenu(menuItems) {
   if(localStorage.getItem("role") === "CUSTOMER") {
-      var menuBlock = document.querySelector('.customer-menu-items');
+    getMyOrder();
+    var menuBlock = document.querySelector('.customer-menu-items');
 
-      var htmls = menuItems.map(function(menuItem) {
-          return `<div class="customer-menu-item">
-              <p>${menuItem.name}</p>
-              <p>Giá tiền: ${menuItem.price}</p>
-              <button class="add-to-order" data-id="${menuItem.id}" 
-              data-name="${menuItem.name}" 
-              data-price="${menuItem.price}">Chọn</button>
+    var htmls = menuItems.map(function(menuItem) {
+        return `<div class="customer-menu-item">
+            <p>${menuItem.name}</p>
+            <p>Giá tiền: ${menuItem.price}</p>
+            <button class="add-to-order" data-id="${menuItem.id}" 
+            data-name="${menuItem.name}" 
+            data-price="${menuItem.price}">Chọn</button>
+          </div>`
+    });
+    menuBlock.innerHTML = htmls.join('');
+    setUpAddtoOrderBtns();
+} else if(localStorage.getItem("role") === "MANAGER") {
+    var menuBlock = document.querySelector('.manager-menu-items');
+
+    var htmls = menuItems.map(function(menuItem) {
+    return `<div class="manager-menu-item">
+                <p>${menuItem.name}</p>
+                <p>Giá tiền: ${menuItem.price}</p>
             </div>`
-      });
-      menuBlock.innerHTML = htmls.join('');
-      setUpAddtoOrderBtns();
-  } else if(localStorage.getItem("role") === "MANAGER") {
-      var menuBlock = document.querySelector('.manager-menu-items');
-
-      var htmls = menuItems.map(function(menuItem) {
-      return `<div class="manager-menu-item">
-                  <p>${menuItem.name}</p>
-                  <p>Giá tiền: ${menuItem.price}</p>
-              </div>`
-      });
-      menuBlock.innerHTML = htmls.join('');
+    });
+    menuBlock.innerHTML = htmls.join('');
   }
 }
 
@@ -247,7 +249,7 @@ function fetchOccupiedTables(tables) {
   });
 }
 
-let myOrderId = 0;
+let myOrderId = localStorage.getItem('myOrderId') || 0; // Lấy từ LocalStorage nếu có
 // Gửi order
 document.querySelector('.send-order').addEventListener('click', async function () {
   const selectedButton = document.querySelector('.customer-table-btn.selected');
@@ -309,6 +311,7 @@ document.querySelector('.send-order').addEventListener('click', async function (
 
     // Chuẩn bị dữ liệu gửi đi
     myOrderId = Date.now().toString();
+    localStorage.setItem('myOrderId', myOrderId); // Lưu vào LocalStorage
 
     const orderData = {
       id: myOrderId,
@@ -338,7 +341,7 @@ document.querySelector('.send-order').addEventListener('click', async function (
     console.log('Order response:', orderResult);
 
     // Gửi yêu cầu cập nhật trạng thái bàn
-    selectedTable.status = "OCCUPIED"; // Cập nhật trạng thái bàn
+    selectedTable.status = "OCCUPIED";
     const tableUpdateResponse = await fetch(`${tableApi}/${selectedTable.id}`, {
       method: 'PUT',
       headers: {
@@ -354,13 +357,6 @@ document.querySelector('.send-order').addEventListener('click', async function (
     const updatedTable = await tableUpdateResponse.json();
     console.log('Updated table status:', updatedTable);
 
-    // // hiển thị đơn mới đặt
-    // const order = await (await fetch(`${orderApi}/${newOrderId}`)).json();
-
-    // renderOrder(order);
-    // alert('Đơn hàng đã gửi thành công!');
-
-
     // Xóa danh sách sau khi gửi
     document.querySelector('#order-list').innerHTML = '';
   } catch (error) {
@@ -371,27 +367,30 @@ document.querySelector('.send-order').addEventListener('click', async function (
 
 async function getMyOrder() {
   try {
-    // Fetch đơn hàng từ server (sử dụng await để đợi kết quả)
-    const response = await fetch(`${orderApi}/${myOrderId}`);
-    
-    // Kiểm tra phản hồi
+    const storedOrderId = localStorage.getItem('myOrderId'); 
+    if (!storedOrderId) {
+      alert('Không tìm thấy đơn hàng nào.');
+      return;
+    }
+
+    // Fetch đơn hàng từ server
+    const response = await fetch(`${orderApi}/${storedOrderId}`);
     if (!response.ok) {
       throw new Error('Không thể lấy thông tin đơn hàng');
     }
 
-    // Parse JSON dữ liệu trả về từ server
     const order = await response.json();
-
-    // Render đơn hàng
     renderOrder(order);
   } catch (error) {
     console.error(error);
-    alert('Đã có lỗi xảy ra khi lấy đơn hàng');
   }
 }
 
 function renderOrder(order) {
-  const ordersContainer = document.querySelector('#customer-order-list-modal'); // Element chứa danh sách đơn hàng
+
+  const ordersContainer = document.querySelector('#customer-order-list-modal');
+  const payButtonHTML = order.orderStatus === 'CONFIRM' ? '<button class="pay">Thanh toán</button>' : '';
+
   const orderHTML = `
     <div class="order">
       <p><strong>Bàn:</strong> ${order.table.number}</p>
@@ -403,9 +402,42 @@ function renderOrder(order) {
         `).join('')}
       </ul>
       <p><strong>Tổng tiền:</strong> ${order.totalAmount}</p>
+      ${payButtonHTML}
     </div>
   `;
-  ordersContainer.innerHTML = orderHTML + ordersContainer.innerHTML; // Thêm đơn mới lên đầu
+  ordersContainer.innerHTML = orderHTML + ordersContainer.innerHTML;
+
+  const payButton = document.querySelector('.pay');
+  if (payButton) {
+    payButton.addEventListener('click', async function() {
+      try {
+        // Cập nhật trạng thái đơn hàng thành "PAID"
+        const response = await fetch(`${orderApi}/${order.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...order,
+            orderStatus: 'PAID'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Không thể cập nhật trạng thái đơn hàng');
+        }
+
+        // Cập nhật lại giao diện
+        order.orderStatus = 'PAID'; // Cập nhật trạng thái trên frontend
+        renderOrder(order); // Hiển thị lại đơn hàng với trạng thái mới
+
+        alert('Đơn hàng đã được thanh toán!');
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi thanh toán');
+      }
+    });
+  }
 }
 
 // DOM elements
@@ -429,7 +461,7 @@ closeModalBtncm.addEventListener('click', () => {
 ///////////////////////////////////////////////////////////////////////////////////////
 // thiet lap cac chuc nang manager
 
-// xu ly menu
+// xu ly menu( them, xoa san pham)
 
 function createMenuItem(menuItem,callback) {
   var option = {
@@ -439,7 +471,7 @@ function createMenuItem(menuItem,callback) {
     },
     body: JSON.stringify(menuItem)
   }
-  fetch("http://localhost:8080/menu", option) 
+  fetch(menuApi, option) 
     .then(function(response) {
       response.json();
     })
@@ -454,28 +486,43 @@ function deleteMenuItem(id, callback) {
     method: 'DELETE',
     headers: {
       'Content-type': 'application/json; charset=UTF-8'
-     }
-  }
-  fetch(`${menuApi}/${id}`, option) 
-    .then(function(response) {
-      response.json();
-    })
-    .then(callback);
-}
-
-function putMenuItem(data, callback) {
-  var option = {
-    method: 'PUT',
-    body: JSON.stringify(data),
-    header: {
-      'Content-type': 'application/json; charset=UTF-8'
     }
   };
-  fetch(menuApi, option) 
+  
+  fetch(`${menuApi}/${id}`, option) 
     .then(function(response) {
-      response.json();
+      if (!response.ok) {
+        throw new Error("Failed to delete item");
+      }
+      return response.json();
     })
-    .then(callback);
+    .then(callback)
+    .catch(function(error) {
+      console.log("Error deleting menu item:", error);
+      alert("Có lỗi khi xóa sản phẩm. Vui lòng thử lại.");
+    });
+}
+
+function handleDeleteForm() {
+  var deleteButton = document.querySelector('#deleteBtn');
+  if (!deleteButton) {
+    console.log('Không tìm thấy nút delete');
+    return;
+  }
+
+  deleteButton.onclick = function() {
+    var id = parseInt(document.getElementById('product-id').value, 10);
+    
+    if (isNaN(id) || id <= 0) {
+      alert("Vui lòng nhập ID hợp lệ");
+      return;
+    }
+
+    deleteMenuItem(id, function() {
+      alert('Đã xóa sản phẩm');
+      getMenuItem(renderMenu);
+    });
+  };
 }
 
 function handleCreateForm() {
@@ -509,6 +556,24 @@ function handleCreateForm() {
       alert("Thêm sản phẩm thành công!");
       getMenuItem(renderMenu);
     });
+  }
+}
+
+function toggleAddItem() {
+  const addItemContainer = document.getElementById("add-item-container");
+  if (addItemContainer.style.display === "block") {
+    addItemContainer.style.display = "none";
+  } else {
+    addItemContainer.style.display = "block";
+  }
+}
+  
+function toggleSubItem() {
+  const subItemContainer = document.getElementById("sub-item-container");
+  if(subItemContainer.style.display ==="block") {
+    subItemContainer.style.display = "none";
+  } else {
+    subItemContainer.style.display = "block";
   }
 }
 
@@ -596,28 +661,25 @@ function displayOrderDetails(order, tables) {
         alert('Failed to confirm the order.');
       });
   });
+
   // thêm sự kiện nút delete
   const deleteButton = document.getElementById('delete-order-btn');
   deleteButton.addEventListener('click', function () {
-    console.log(typeof order.id);
     if (order.orderStatus === 'PAID') {
       deleteOrder(order.id)
         .then(() => {
-          
           alert(`Order for table ${order.table.number} has been deleted.`);
-          updateTableStatus(order.table.id, 'AVAILABLE', tables)
-            .then(() => {
-              console.log(`Table ${order.table.number} is now AVAILABLE.`);
-              fetchTableAndOrderData();
-            })
-            .catch((error) => {
-              console.error('Error updating table status:', error);
-            });
+          return updateTableStatus(order.table.number, 'AVAILABLE');
+        })
+        .then(() => {
+          console.log(`Table ${order.table.number} is now AVAILABLE.`);
+          fetchTableAndOrderData();
         })
         .catch((error) => {
-          console.error('Error deleting order:',error);
-          alert('Failed to delete the order.');
+          console.error('Error updating table status or deleting order:', error);
+          // alert('Failed to delete the order or update table status.');
         });
+      orderDetailsContainer.innerHTML = `<p>Đơn hàng đã bị xóa.</p>`;
     }
   });
 }
@@ -644,50 +706,25 @@ function deleteOrder(orderId) {
     if (!response.ok) {
       throw new Error('Failed to delete order.');
     }
-    console.log(response.json());
     return response.json();
-  })
+  });
 }
 
-function updateTableStatus(tableNumber, newStatus, tables) {
-  const table = tables.find((tbl) => tbl.number === tableNumber);
-  if (table) {
-    return fetch(`${tableApi}/${table.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status: newStatus }),
-    }).then((response) => {
-      if (!response.ok) {
-        throw new Error('Failed to update table status.');
-      }
-      return response.json();
-    });
-  } else {
-    return Promise.reject('Table not found.');
-  }
-}
-
-function toggleAddItem() {
-const addItemContainer = document.getElementById("add-item-container");
-if (addItemContainer.style.display === "block") {
-  addItemContainer.style.display = "none";
-} else {
-  addItemContainer.style.display = "block";
-}
-}
-
-function toggleSubItem() {
-const subItemContainer = document.getElementById("sub-item-container");
-if(subItemContainer.style.display ==="block") {
-  subItemContainer.style.display = "none";
-} else {
-  subItemContainer.style.display = "block";
-}
+function updateTableStatus(tableNumber, newStatus) {
+  return fetch(`${tableApi}/${tableNumber}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status: newStatus }),
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Failed to update table status.');
+    }
+    return response.json();
+  });
 }
   
-
 
 // Phân quyền
 function applyRoleBasedActions(role) {
@@ -716,10 +753,10 @@ const orderModal = document.getElementById('manager-order-modal');
 const closeModalBtn = document.getElementById('manager-close-modal');
 const orderListModal = document.getElementById('manager-order-list-modal');
 
-// Fetch orders from JSON Server
+// Fetch orders
 async function fetchOrders() {
     try {
-        const response = await fetch('http://localhost:3000/order'); // URL của JSON Server
+        const response = await fetch(menuApi);
         const orders = await response.json();
         renderOrders(orders);
     } catch (error) {
@@ -732,57 +769,31 @@ function renderOrders(orders) {
     orderListModal.innerHTML = ''; // Clear existing orders
 
     orders.forEach(order => {
-        const orderItem = document.createElement('li');
-        orderItem.classList.add('order-item');
+      const orderItem = document.createElement('li');
+      orderItem.classList.add('order-item');
 
-        orderItem.innerHTML = `
-            <p><strong>Bàn:</strong> ${order.table}</p>
-            <p><strong>Khách hàng:</strong> ${order.custommer}</p>
-            <p><strong>Thời gian đặt:</strong> ${new Date(order.orderTime).toLocaleString()}</p>
-            <p><strong>Trạng thái:</strong> ${order.orderStatus}</p>
-            <p><strong>Tổng tiền:</strong> ${order.totalAmount}₫</p>
-            <p><strong>Chi tiết món:</strong></p>
-            <ul>
-                ${order.orderItems.map(item => `
-                    <li>${item.menuItem.name} - ${item.quantity} x ${item.price}₫</li>
-                `).join('')}
-            </ul>
-            ${order.orderStatus === 'PENDING' ? `<button data-id="${order.id}" class="delete-order">Xóa</button>` : ''}
-        `;
+      orderItem.innerHTML = `
+          <p><strong>Bàn:</strong> ${order.table}</p>
+          <p><strong>Khách hàng:</strong> ${order.custommer}</p>
+          <p><strong>Thời gian đặt:</strong> ${new Date(order.orderTime).toLocaleString()}</p>
+          <p><strong>Trạng thái:</strong> ${order.orderStatus}</p>
+          <p><strong>Tổng tiền:</strong> ${order.totalAmount}₫</p>
+          <p><strong>Chi tiết món:</strong></p>
+          <ul>
+              ${order.orderItems.map(item => `
+                  <li>${item.menuItem.name} - ${item.quantity} x ${item.price}₫</li>
+              `).join('')}
+          </ul>
+      `;
 
-        orderListModal.appendChild(orderItem);
+      orderListModal.appendChild(orderItem);
     });
-
-    // Attach event listeners for delete buttons
-    document.querySelectorAll('.delete-order').forEach(button => {
-        button.addEventListener('click', deleteOrder);
-    });
-}
-
-// Delete order from JSON Server
-async function deleteOrder(event) {
-    const orderId = event.target.getAttribute('data-id');
-
-    try {
-        const response = await fetch(`http://localhost:3000/order/${orderId}`, {
-            method: 'DELETE',
-        });
-
-        if (response.ok) {
-            alert('Đã xóa đơn hàng!');
-            fetchOrders(); // Refresh orders
-        } else {
-            alert('Lỗi khi xóa đơn hàng.');
-        }
-    } catch (error) {
-        console.error('Error deleting order:', error);
-    }
 }
 
 // Event listeners
 showOrdersBtn.addEventListener('click', () => {
     orderModal.classList.remove('hidden');
-    fetchOrders(); // Fetch and render orders
+    fetchOrders();
 });
 
 closeModalBtn.addEventListener('click', () => {
